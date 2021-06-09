@@ -2,7 +2,7 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "storageAccounts_straccbackupcapolicy_name": {
+        "storageAccounts_name": {
             "defaultValue": "straccbackupcapolicy",
             "type": "String"
         }
@@ -12,7 +12,7 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-04-01",
-            "name": "[parameters('storageAccounts_straccbackupcapolicy_name')]",
+            "name": "[parameters('storageAccounts_name')]",
             "location": "westeurope",
             "sku": {
                 "name": "Standard_LRS",
@@ -27,25 +27,25 @@
         {
             "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
             "apiVersion": "2021-04-01",
-            "name": "[concat(parameters('storageAccounts_straccbackupcapolicy_name'), '/default/cabackup')]",
+            "name": "[concat(parameters('storageAccounts_name'), '/default/cabackup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_straccbackupcapolicy_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_name'))]"
             ]
         },
         {
             "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
             "apiVersion": "2021-04-01",
-            "name": "[concat(parameters('storageAccounts_straccbackupcapolicy_name'), '/default/cabackupconfiguration')]",
+            "name": "[concat(parameters('storageAccounts_name'), '/default/cabackupconfiguration')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_straccbackupcapolicy_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_name'))]"
             ]
         },
         {
             "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
             "apiVersion": "2021-04-01",
-            "name": "[concat(parameters('storageAccounts_straccbackupcapolicy_name'), '/default/catranslation')]",
+            "name": "[concat(parameters('storageAccounts_name'), '/default/catranslation')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_straccbackupcapolicy_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_name'))]"
             ]
         }
     ]
