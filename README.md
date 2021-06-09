@@ -2,38 +2,68 @@
 You can find here the installation process for the whole solution.
 The monthley fee for that solution (Microsoft consumption) is aprox 50€
 
-#### Okay let's start, to install the solution deploy the Azure storage account first:
+<hr/>
 
-[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FStorageAccount%2Fdeploystorageaccount.json)
+#### 1. Okay let's start, to install the solution deploy the Azure storage account first:
 
 That deployment includes the Azure storage account and the required Azure storage tables
 * cabackup
 * catranslation
 * cabackupconfiguration
 
-### Deployment input:
+[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FStorageAccount%2Fdeploystorageaccount.json)
+
+> #### Deployment input:
+> <b style='color:red'>!IMPORTANT!</b> please select an existing resourcegroup or define a new one!
 
 ![Deplyoment](./StorageAccount/images/storagedeployment.png)
 
-### Result:
+> #### Result:
 
 ![Finished](./StorageAccount/images/finisheddeployment.png)
 
 <hr/>
 
-#### Next step is the user assigned managed identity deployment
+#### 2. Next step is the user assigned managed identity deployment
 
-That deployment step includes the Azure user assigned managed identits, which is important for the whole solution.
+That deployment step includes the Azure user assigned managed identits deployment, which is important for the whole solution.
 Keep in mind, we have to copy the user assigned managed identity 'client id' when the deployment is finished!
 
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FAzureMI%2Fdeploymanagedidentity.json)
+
+> #### Deployment input:
+> <b style='color:red'>!IMPORTANT!</b> please select the resource group created bevor
+
+![Deplyoment](./AzureMI/images/deploymanagedidentity.png)
+
+> #### Result:
+
+![Deplyoment](./AzureMI/images/finisheddeployment.png)
+
+> #### <b style='color:orange'>Now an important part!</b>
+> Please copy the output from the deployment, we need that information in the next steps!
+
+![Deplyoment](./AzureMI/images/getmiidstep1.png)
+
+Than:
+
+![Deplyoment](./AzureMI/images/getmiidstep2.png)
+
 
 
 
 <hr/>
 
-#### Next step is the keyvault deployment
+#### 3. Now we can deploy the keyvault resource
 
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FKeyVault%2Fdeploykeyvault.json)
 
-That 
+That deployment step includes the Azure keyvault deployment, which is important for the Web Application.
+
+> #### Deployment input:
+> <b style='color:red'>!IMPORTANT!</b> <br/> 
+> * Please select the resource group created bevor
+> * Add the object id from the user assigned managed identity
+> * Add the Azure storage account connection string
+
+![Deplyoment](./AzureMI/images/getmiidstep2.png)
