@@ -12,7 +12,7 @@
             "location": "[resourceGroup().location]",
             "kind": "V1",
             "properties": {
-                "displayName": "laglerh@lagler-gruener.at",
+                "displayName": "CABackupOffice365",
                 "customParameterValues": {},
                 "api": {
                     "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/westeurope/managedApis/office365')]"
