@@ -13,7 +13,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-04-01",
             "name": "[parameters('storageAccounts_name')]",
-            "location": "westeurope",
+            "location": "[resourcegroup().location]",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"
