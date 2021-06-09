@@ -5,6 +5,9 @@
         "keyvault_name": {
             "defaultValue": "CAPolicyBackupKV",
             "type": "String"
+        },
+        "tenantId": {
+            "type": "String"
         }
     },
     "variables": {},
@@ -19,6 +22,7 @@
                     "family": "A",
                     "name": "Standard"
                 },
+                "tenantId": "[parameters('tenantId')]",
                 "enableSoftDelete": true,
                 "softDeleteRetentionInDays": 90,
                 "enableRbacAuthorization": false
