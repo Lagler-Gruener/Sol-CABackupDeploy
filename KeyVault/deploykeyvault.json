@@ -6,8 +6,11 @@
             "defaultValue": "CAPolicyBackupKV",
             "type": "String"
         },
-        "tenantId": {
-            "type": "String"
+        "objectid": {
+            "type": "String",
+            "metadata": {
+                "description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets."
+      }
         }
     },
     "variables": {},
@@ -22,7 +25,19 @@
                     "family": "A",
                     "name": "Standard"
                 },
-                "tenantId": "[parameters('tenantId')]",
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[parameters('objectid')]",
+                        "permissions": {
+                            "secrets": [
+                                "List",
+                                "Get"
+                            ]
+                       }
+                    }
+                ],
                 "enableSoftDelete": true,
                 "softDeleteRetentionInDays": 90,
                 "enableRbacAuthorization": false
