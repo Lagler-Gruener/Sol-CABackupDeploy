@@ -23,6 +23,15 @@ That deployment includes the Azure storage account and the required Azure storag
 
 #### Next step is the keyvault deployment
 
+That deployment step includes the Azure user assigned managed identits, which is important for the whole solution.
+Keep in mind, we have to copy the user assigned managed identity 'client id' when the deployment is finished!
+
+
+
+<hr/>
+
+#### Next step is the keyvault deployment
+
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FKeyVault%2Fdeploykeyvault.json)
 
 That 
