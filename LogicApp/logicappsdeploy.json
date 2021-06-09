@@ -1,0 +1,1214 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "office365",
+            "location": "[resourceGroup().location]",
+            "kind": "V1",
+            "properties": {
+                "displayName": "laglerh@lagler-gruener.at",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/westeurope/managedApis/office365')]"
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "azuretables",
+            "location": "[resourceGroup().location]",
+            "kind": "V1",
+            "properties": {
+                "displayName": "ca-backup",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/westeurope/managedApis/azuretables')]"
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "CA-Restore",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', 'azuretables')]",
+                "[resourceId('Microsoft.Web/connections', 'office365')]"
+            ],
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "manual": {
+                            "type": "Request",
+                            "kind": "Http",
+                            "inputs": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        },
+                                        "policypartitionkey": {
+                                            "type": "string"
+                                        },
+                                        "policyrowkey": {
+                                            "type": "string"
+                                        },
+                                        "requestor": {
+                                            "type": "string"
+                                        },
+                                        "type": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Condition": {
+                            "actions": {
+                                "Check_if_type_=_new": {
+                                    "actions": {
+                                        "Restore_conditional_access_policy_(new)": {
+                                            "runAfter": {},
+                                            "type": "Http",
+                                            "inputs": {
+                                                "authentication": {
+                                                    "audience": "https://graph.microsoft.com",
+                                                    "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                                    "type": "ManagedServiceIdentity"
+                                                },
+                                                "body": "@outputs('Remove_modifiedDateTime_property_from_pasted_JSON_file')",
+                                                "headers": {
+                                                    "Content-Type": "application/json"
+                                                },
+                                                "method": "POST",
+                                                "uri": "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies"
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {},
+                                    "else": {
+                                        "actions": {
+                                            "Check_approval_or_disabled_state": {
+                                                "actions": {
+                                                    "Restore_conditional_access_policy_(overwrite)": {
+                                                        "runAfter": {},
+                                                        "type": "Http",
+                                                        "inputs": {
+                                                            "authentication": {
+                                                                "audience": "https://graph.microsoft.com",
+                                                                "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                                                "type": "ManagedServiceIdentity"
+                                                            },
+                                                            "body": "@outputs('Remove_modifiedDateTime_property_from_pasted_JSON_file')",
+                                                            "headers": {
+                                                                "Content-Type": "application/json"
+                                                            },
+                                                            "method": "PATCH",
+                                                            "uri": "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies/@{body('Parse_the_conditional_access_policy_marked_for_restore')?['id']}"
+                                                        }
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "Check_if_approval_is_enabled": [
+                                                        "Succeeded"
+                                                    ]
+                                                },
+                                                "expression": {
+                                                    "or": [
+                                                        {
+                                                            "equals": [
+                                                                "@body('Send_approval_email')?['SelectedOption']",
+                                                                "Approve"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "equals": [
+                                                                "@body('Get_approver_email')?['state']",
+                                                                false
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "type": "If"
+                                            },
+                                            "Check_if_approval_is_enabled": {
+                                                "actions": {
+                                                    "Send_approval_email": {
+                                                        "runAfter": {},
+                                                        "type": "ApiConnectionWebhook",
+                                                        "inputs": {
+                                                            "body": {
+                                                                "Message": {
+                                                                    "Body": "there is a new azure conditional access restore request available.<br/>\nThe customer '@{triggerBody()?['requestor']}' wants to restore (overwrite) the <br/>\nconditional access policy '@{body('Parse_the_conditional_access_policy_marked_for_restore')?['displayName']}'. <br/>\n<p></p>\nHere is the data, which will be restored.<br/>\nPlease confirm or reject the request\n<hr/>\n@{outputs('Remove_modifiedDateTime_property_from_pasted_JSON_file')}\n<hr/>\nRegards,<br/>\nAzure conditional access backup service\n\n\n\n\n\n\n",
+                                                                    "HeaderText": "Dear ladies and gentleman.",
+                                                                    "HideHTMLMessage": false,
+                                                                    "Importance": "High",
+                                                                    "Options": "Approve, Reject",
+                                                                    "SelectionText": "Do you want to approve the restore request?",
+                                                                    "ShowHTMLConfirmationDialog": false,
+                                                                    "Subject": "Approval Request",
+                                                                    "To": "@{body('Get_approver_email')?['email']}",
+                                                                    "UseOnlyHTMLMessage": true
+                                                                },
+                                                                "NotificationUrl": "@{listCallbackUrl()}"
+                                                            },
+                                                            "host": {
+                                                                "connection": {
+                                                                    "name": "@parameters('$connections')['office365']['connectionId']"
+                                                                }
+                                                            },
+                                                            "path": "/approvalmail/$subscriptions"
+                                                        }
+                                                    }
+                                                },
+                                                "runAfter": {
+                                                    "Get_approver_email": [
+                                                        "Succeeded"
+                                                    ]
+                                                },
+                                                "expression": {
+                                                    "and": [
+                                                        {
+                                                            "equals": [
+                                                                "@body('Get_approver_email')?['state']",
+                                                                true
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "type": "If"
+                                            },
+                                            "Get_approver_email": {
+                                                "runAfter": {},
+                                                "type": "ApiConnection",
+                                                "inputs": {
+                                                    "host": {
+                                                        "connection": {
+                                                            "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                                        }
+                                                    },
+                                                    "method": "get",
+                                                    "path": "/Tables/@{encodeURIComponent('cabackupconfiguration')}/entities(PartitionKey='@{encodeURIComponent('config')}',RowKey='@{encodeURIComponent('overridepolicyvalidate')}')"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "equals": [
+                                                    "@triggerBody()?['type']",
+                                                    "New"
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                }
+                            },
+                            "runAfter": {
+                                "Get_the_current_conditional_access_policy": [
+                                    "Succeeded",
+                                    "Failed",
+                                    "Skipped",
+                                    "TimedOut"
+                                ]
+                            },
+                            "else": {
+                                "actions": {
+                                    "Restore_conditional_access_policy_in_case_of_deletion": {
+                                        "runAfter": {},
+                                        "type": "Http",
+                                        "inputs": {
+                                            "authentication": {
+                                                "audience": "https://graph.microsoft.com",
+                                                "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                                "type": "ManagedServiceIdentity"
+                                            },
+                                            "body": "@outputs('Remove_modifiedDateTime_property_from_pasted_JSON_file')",
+                                            "headers": {
+                                                "Content-Type": "application/json"
+                                            },
+                                            "method": "POST",
+                                            "uri": "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies"
+                                        }
+                                    }
+                                }
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "equals": [
+                                            "@outputs('Get_the_current_conditional_access_policy')['statusCode']",
+                                            200
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Get_the_current_conditional_access_policy": {
+                            "runAfter": {
+                                "Remove_modifiedDateTime_property_from_pasted_JSON_file": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Http",
+                            "inputs": {
+                                "authentication": {
+                                    "audience": "https://graph.microsoft.com",
+                                    "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                    "type": "ManagedServiceIdentity"
+                                },
+                                "method": "GET",
+                                "uri": "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies/@{body('Parse_the_conditional_access_policy_marked_for_restore')?['id']}"
+                            }
+                        },
+                        "Merge_Entity": {
+                            "runAfter": {
+                                "Condition": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "BackupRestoreing": "false"
+                                },
+                                "headers": {
+                                    "If-Match": "*"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                    }
+                                },
+                                "method": "patch",
+                                "path": "/Tables/@{encodeURIComponent('cabackup')}/entities/etag(PartitionKey='@{encodeURIComponent(triggerBody()?['policypartitionkey'])}',RowKey='@{encodeURIComponent(triggerBody()?['policyrowkey'])}')"
+                            }
+                        },
+                        "Parse_the_conditional_access_policy_marked_for_restore": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerBody()?['data']",
+                                "schema": {
+                                    "properties": {
+                                        "createdDateTime": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "displayName": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "modifiedDateTime": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "state": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "Remove_createdDateTime_property_from_pasted_JSON_file": {
+                            "runAfter": {
+                                "Remove_id_read-only_property_from_pasted_JSON_file": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Compose",
+                            "inputs": "@removeProperty(outputs('Remove_id_read-only_property_from_pasted_JSON_file'),'createdDateTime')"
+                        },
+                        "Remove_id_read-only_property_from_pasted_JSON_file": {
+                            "runAfter": {
+                                "Parse_the_conditional_access_policy_marked_for_restore": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Compose",
+                            "inputs": "@removeProperty(body('Parse_the_Conditional_Access_Policy_marked_for_restore'),'id')"
+                        },
+                        "Remove_modifiedDateTime_property_from_pasted_JSON_file": {
+                            "runAfter": {
+                                "Remove_createdDateTime_property_from_pasted_JSON_file": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Compose",
+                            "inputs": "@removeProperty(outputs('Remove_createdDateTime_property_from_pasted_JSON_file'),'modifiedDateTime')"
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuretables": {
+                                "connectionId": "[concat('/subscriptions/', subscription().subscriptionId ,'/resourceGroups/', resourceGroup().name ,'/providers/Microsoft.Web/connections/azuretables')]",
+                                "connectionName": "azuretables",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId ,'/providers/Microsoft.Web/locations/westeurope/managedApis/azuretables')]"
+                            },
+                            "office365": {
+                                "connectionId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/office365')]",
+                                "connectionName": "office365",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId ,'/providers/Microsoft.Web/locations/westeurope/managedApis/office365')]"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "CA-Monitor-Changes",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', 'azuretables')]",
+                "[resourceId('Microsoft.Web/connections', 'office365')]"
+            ],
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "manual": {
+                            "type": "Request",
+                            "kind": "Http",
+                            "inputs": {}
+                        }
+                    },
+                    "actions": {
+                        "For_each_http_request_entries": {
+                            "foreach": "@body('Parse_HTTP_request_to_JSON')?['data']?['alertContext']?['SearchResults']?['tables']",
+                            "actions": {
+                                "For_each_http_request_table_rows": {
+                                    "foreach": "@body('Parse_http_request_table_to_JSON_')?['rows']",
+                                    "actions": {
+                                        "HTTP_get_modified_by": {
+                                            "runAfter": {
+                                                "Parse_JSON_row_entry_21_(UserID)": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Http",
+                                            "inputs": {
+                                                "authentication": {
+                                                    "audience": "https://graph.microsoft.com",
+                                                    "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                                    "type": "ManagedServiceIdentity"
+                                                },
+                                                "method": "GET",
+                                                "uri": "https://graph.microsoft.com/v1.0/users/@{body('Parse_JSON_row_entry_21_(UserID)')?['user']?['id']}"
+                                            }
+                                        },
+                                        "Insert_Entity_to_backuptable": {
+                                            "runAfter": {
+                                                "Parse_JSON_modified_by": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "ApiConnection",
+                                            "inputs": {
+                                                "body": {
+                                                    "BackupDate": "@{substring(utcNow(),0,19)}",
+                                                    "BackupRestoreing": "false",
+                                                    "CANewValue": "@{body('Parse_JSON_row_entry_modifiedProperties')?['newValue']}",
+                                                    "CAOldValue": "@{body('Parse_JSON_row_entry_modifiedProperties')?['oldValue']}",
+                                                    "PartitionKey": "CABackupChanges",
+                                                    "RowKey": "@{body('Parse_JSON_row_entry_24')?['id']}-@{utcNow()}",
+                                                    "modifiedby": "@body('Parse_JSON_modified_by')?['userPrincipalName']"
+                                                },
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azuretables_1']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "post",
+                                                "path": "/Tables/@{encodeURIComponent('cabackup')}/entities"
+                                            }
+                                        },
+                                        "Parse_JSON_modified_by": {
+                                            "runAfter": {
+                                                "HTTP_get_modified_by": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "ParseJson",
+                                            "inputs": {
+                                                "content": "@body('HTTP_get_modified_by')",
+                                                "schema": {
+                                                    "properties": {
+                                                        "@@odata.context": {
+                                                            "type": "string"
+                                                        },
+                                                        "businessPhones": {
+                                                            "type": "array"
+                                                        },
+                                                        "displayName": {},
+                                                        "givenName": {},
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "jobTitle": {},
+                                                        "mail": {
+                                                            "type": "string"
+                                                        },
+                                                        "mobilePhone": {},
+                                                        "officeLocation": {},
+                                                        "preferredLanguage": {},
+                                                        "surname": {},
+                                                        "userPrincipalName": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "Parse_JSON_row_entry_21_(UserID)": {
+                                            "runAfter": {
+                                                "Parse_JSON_row_entry_modifiedProperties": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "ParseJson",
+                                            "inputs": {
+                                                "content": "@substring(items('For_each_http_request_table_rows')[20],0)",
+                                                "schema": {
+                                                    "properties": {
+                                                        "user": {
+                                                            "properties": {
+                                                                "displayName": {},
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "ipAddress": {},
+                                                                "roles": {
+                                                                    "type": "array"
+                                                                },
+                                                                "userPrincipalName": {}
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "Parse_JSON_row_entry_24": {
+                                            "runAfter": {},
+                                            "type": "ParseJson",
+                                            "inputs": {
+                                                "content": "@substring(items('For_each_http_request_table_rows')[24],1)",
+                                                "schema": {}
+                                            }
+                                        },
+                                        "Parse_JSON_row_entry_modifiedProperties": {
+                                            "runAfter": {
+                                                "Parse_JSON_row_entry_24": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "ParseJson",
+                                            "inputs": {
+                                                "content": "@{substring(string(body('Parse_JSON_row_entry_24')?['modifiedProperties']),1)}",
+                                                "schema": {}
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Parse_http_request_table_to_JSON_": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Foreach"
+                                },
+                                "Parse_http_request_table_to_JSON_": {
+                                    "runAfter": {},
+                                    "type": "ParseJson",
+                                    "inputs": {
+                                        "content": "@items('For_each_http_request_entries')",
+                                        "schema": {}
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Parse_HTTP_request_to_JSON": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "Parse_HTTP_request_to_JSON": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerBody()",
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "alertContext": {
+                                                    "properties": {
+                                                        "AffectedConfigurationItems": {
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "type": "array"
+                                                        },
+                                                        "AlertType": {
+                                                            "type": "string"
+                                                        },
+                                                        "IncludeSearchResults": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "IncludedSearchResults": {
+                                                            "type": "string"
+                                                        },
+                                                        "LinkToFilteredSearchResultsAPI": {
+                                                            "type": "string"
+                                                        },
+                                                        "LinkToFilteredSearchResultsUI": {
+                                                            "type": "string"
+                                                        },
+                                                        "LinkToSearchResults": {
+                                                            "type": "string"
+                                                        },
+                                                        "LinkToSearchResultsAPI": {
+                                                            "type": "string"
+                                                        },
+                                                        "Operator": {
+                                                            "type": "string"
+                                                        },
+                                                        "ResultCount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "SearchIntervalDurationMin": {
+                                                            "type": "string"
+                                                        },
+                                                        "SearchIntervalEndtimeUtc": {
+                                                            "type": "string"
+                                                        },
+                                                        "SearchIntervalInMinutes": {
+                                                            "type": "string"
+                                                        },
+                                                        "SearchIntervalStartTimeUtc": {
+                                                            "type": "string"
+                                                        },
+                                                        "SearchQuery": {
+                                                            "type": "string"
+                                                        },
+                                                        "SearchResults": {
+                                                            "properties": {
+                                                                "dataSources": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "region": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "resourceId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "tables": {
+                                                                                "items": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "type": "array"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "resourceId",
+                                                                            "region",
+                                                                            "tables"
+                                                                        ],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                },
+                                                                "statistics": {
+                                                                    "properties": {
+                                                                        "query": {
+                                                                            "properties": {
+                                                                                "datasetStatistics": {
+                                                                                    "items": {
+                                                                                        "properties": {
+                                                                                            "tableRowCount": {
+                                                                                                "type": "integer"
+                                                                                            },
+                                                                                            "tableSize": {
+                                                                                                "type": "integer"
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [
+                                                                                            "tableRowCount",
+                                                                                            "tableSize"
+                                                                                        ],
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "type": "array"
+                                                                                },
+                                                                                "executionTime": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "inputDatasetStatistics": {
+                                                                                    "properties": {
+                                                                                        "extents": {
+                                                                                            "properties": {
+                                                                                                "scanned": {
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "scannedMaxDatetime": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "scannedMinDatetime": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "total": {
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "rows": {
+                                                                                            "properties": {
+                                                                                                "scanned": {
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "total": {
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "rowstores": {
+                                                                                            "properties": {
+                                                                                                "scannedRows": {
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "scannedValuesSize": {
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "shards": {
+                                                                                            "properties": {
+                                                                                                "queriesGeneric": {
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "queriesSpecialized": {
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        }
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                },
+                                                                                "resourceUsage": {
+                                                                                    "properties": {
+                                                                                        "cache": {
+                                                                                            "properties": {
+                                                                                                "disk": {
+                                                                                                    "properties": {
+                                                                                                        "hits": {
+                                                                                                            "type": "integer"
+                                                                                                        },
+                                                                                                        "misses": {
+                                                                                                            "type": "integer"
+                                                                                                        },
+                                                                                                        "total": {
+                                                                                                            "type": "integer"
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "type": "object"
+                                                                                                },
+                                                                                                "memory": {
+                                                                                                    "properties": {
+                                                                                                        "hits": {
+                                                                                                            "type": "integer"
+                                                                                                        },
+                                                                                                        "misses": {
+                                                                                                            "type": "integer"
+                                                                                                        },
+                                                                                                        "total": {
+                                                                                                            "type": "integer"
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "type": "object"
+                                                                                                },
+                                                                                                "shards": {
+                                                                                                    "properties": {
+                                                                                                        "bypassbytes": {
+                                                                                                            "type": "integer"
+                                                                                                        },
+                                                                                                        "cold": {
+                                                                                                            "properties": {
+                                                                                                                "hitbytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "missbytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "retrievebytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "type": "object"
+                                                                                                        },
+                                                                                                        "hot": {
+                                                                                                            "properties": {
+                                                                                                                "hitbytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "missbytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "retrievebytes": {
+                                                                                                                    "type": "integer"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "type": "object"
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "type": "object"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "cpu": {
+                                                                                            "properties": {
+                                                                                                "kernel": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "totalCpu": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "user": {
+                                                                                                    "type": "string"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "memory": {
+                                                                                            "properties": {
+                                                                                                "peakPerNode": {
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        }
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                },
+                                                                "tables": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "columns": {
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "name": {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        "type": {
+                                                                                            "type": "string"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "name",
+                                                                                        "type"
+                                                                                    ],
+                                                                                    "type": "object"
+                                                                                },
+                                                                                "type": "array"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "rows": {
+                                                                                "items": {
+                                                                                    "type": "array"
+                                                                                },
+                                                                                "type": "array"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "columns",
+                                                                            "rows"
+                                                                        ],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "SeverityDescription": {
+                                                            "type": "string"
+                                                        },
+                                                        "Threshold": {
+                                                            "type": "integer"
+                                                        },
+                                                        "WorkspaceId": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "essentials": {
+                                                    "properties": {
+                                                        "alertContextVersion": {
+                                                            "type": "string"
+                                                        },
+                                                        "alertId": {
+                                                            "type": "string"
+                                                        },
+                                                        "alertRule": {
+                                                            "type": "string"
+                                                        },
+                                                        "alertTargetIDs": {
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "type": "array"
+                                                        },
+                                                        "description": {
+                                                            "type": "string"
+                                                        },
+                                                        "essentialsVersion": {
+                                                            "type": "string"
+                                                        },
+                                                        "firedDateTime": {
+                                                            "type": "string"
+                                                        },
+                                                        "monitorCondition": {
+                                                            "type": "string"
+                                                        },
+                                                        "monitoringService": {
+                                                            "type": "string"
+                                                        },
+                                                        "originAlertId": {
+                                                            "type": "string"
+                                                        },
+                                                        "severity": {
+                                                            "type": "string"
+                                                        },
+                                                        "signalType": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "schemaId": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuretables_1": {
+                                "connectionId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/azuretables')]",
+                                "connectionName": "azuretables",
+                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/westeurope/managedApis/azuretables')]"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "CA-Backup",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', 'azuretables')]",
+                "[resourceId('Microsoft.Web/connections', 'office365')]"
+            ],
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Schedule_backup_of_production_conditional_access_policies": {
+                            "recurrence": {
+                                "frequency": "Day",
+                                "interval": 1,
+                                "schedule": {
+                                    "hours": [
+                                        "18"
+                                    ],
+                                    "minutes": [
+                                        0
+                                    ]
+                                },
+                                "timeZone": "GMT Standard Time"
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "For_each_conditional_access_policy": {
+                            "foreach": "@body('Parse_All_Conditional_Access_Policies')?['value']",
+                            "actions": {
+                                "Conditional_access_policy_json": {
+                                    "runAfter": {},
+                                    "type": "Compose",
+                                    "inputs": "@items('For_each_conditional_access_policy')"
+                                },
+                                "Insert_Entity": {
+                                    "runAfter": {
+                                        "Conditional_access_policy_json": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "BackupDate": "@{substring(utcNow(),0,10)}",
+                                            "BackupRestoreing": "false",
+                                            "CABackup": "@{outputs('Conditional_access_policy_json')}",
+                                            "PartitionKey": "CABackupDaily",
+                                            "RowKey": "@{items('For_each_conditional_access_policy')?['id']}-@{substring(utcNow(),0,10)}",
+                                            "modifiedby": ""
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azuretables_1']['connectionId']"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "path": "/Tables/@{encodeURIComponent('cabackup')}/entities"
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Parse_all_conditional_access_policies": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "GET_all_conditional_access_policies_": {
+                            "runAfter": {},
+                            "type": "Http",
+                            "inputs": {
+                                "authentication": {
+                                    "audience": "https://graph.microsoft.com",
+                                    "identity": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/microsoft.managedidentity/userassignedidentities/ca-backup')]",
+                                    "type": "ManagedServiceIdentity"
+                                },
+                                "method": "GET",
+                                "uri": "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies"
+                            }
+                        },
+                        "Parse_all_conditional_access_policies": {
+                            "runAfter": {
+                                "GET_all_conditional_access_policies_": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@body('GET_all_conditional_access_policies_')",
+                                "schema": {
+                                    "properties": {
+                                        "@@odata.context": {
+                                            "type": "string"
+                                        },
+                                        "value": {
+                                            "items": {
+                                                "properties": {
+                                                    "conditions": {
+                                                        "properties": {
+                                                            "applications": {
+                                                                "properties": {
+                                                                    "excludeApplications": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "includeApplications": {
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": "array"
+                                                                    },
+                                                                    "includeUserActions": {
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "clientAppTypes": {
+                                                                "type": "array"
+                                                            },
+                                                            "deviceStates": {},
+                                                            "locations": {},
+                                                            "platforms": {},
+                                                            "signInRiskLevels": {
+                                                                "type": "array"
+                                                            },
+                                                            "users": {
+                                                                "properties": {
+                                                                    "excludeGroups": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "excludeRoles": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "excludeUsers": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "includeGroups": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "includeRoles": {
+                                                                        "type": "array"
+                                                                    },
+                                                                    "includeUsers": {
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "createdDateTime": {},
+                                                    "displayName": {
+                                                        "type": "string"
+                                                    },
+                                                    "grantControls": {
+                                                        "properties": {
+                                                            "builtInControls": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "customAuthenticationFactors": {
+                                                                "type": "array"
+                                                            },
+                                                            "operator": {
+                                                                "type": "string"
+                                                            },
+                                                            "termsOfUse": {
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "modifiedDateTime": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "sessionControls": {},
+                                                    "state": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuretables_1": {
+                                "connectionId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/connections/azuretables')]",
+                                "connectionName": "azuretables",
+                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/westeurope/managedApis/azuretables')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -41,8 +41,7 @@
                        }
                     }
                 ],
-                "enableSoftDelete": true,
-                "softDeleteRetentionInDays": 90,
+                "enableSoftDelete": false,
                 "enableRbacAuthorization": false
             }
         },

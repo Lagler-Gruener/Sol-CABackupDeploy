@@ -56,9 +56,9 @@ Than:
 
 #### 3. Now we can deploy the keyvault resource
 
-[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FKeyVault%2Fdeploykeyvault.json)
-
 That deployment step includes the Azure keyvault deployment, which is important for the Web Application.
+
+[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FKeyVault%2Fdeploykeyvault.json)
 
 > #### Deployment input:
 > <b style='color:red'>!IMPORTANT!</b> <br/> 
@@ -66,4 +66,18 @@ That deployment step includes the Azure keyvault deployment, which is important 
 > * Add the object id from the user assigned managed identity
 > * Add the Azure storage account connection string
 
-![Deplyoment](./AzureMI/images/getmiidstep2.png)
+![Deplyoment](./KeyVault/images/keyvaultdeployment.png)
+
+> You can find the Storageconnection string, when you open the deployed storage account and select the following:
+
+![Deplyoment](./KeyVault/images/selectstroageaccountconstring.png)
+
+> #### Result:
+
+![Deplyoment](./KeyVault/images/finisheddeployment.png)
+
+#### 4. Now we can deploy the Azure logic apps including the connectors
+
+That deployment step includes the Azure logicapp and connectors deployment, which represent the basic infrastructure.
+
+[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FKeyVault%2Fdeploykeyvault.json)
