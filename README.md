@@ -1,12 +1,13 @@
-# Welcome to my CABackup solution.
-You can find here the installation process for the whole solution.
-The monthley fee for that solution (Microsoft consumption) is aprox 50€
+# Welcome to my CABackup solution GitHub repo.
+You can find, the installation process for the whole solution here.
+The fee for that solution (Microsoft consumption) amounts to aprox 50€/month
 
 <hr/>
 
-#### 1. Okay let's start, to install the solution deploy the Azure storage account first:
+#### 1. Okay let's start. Deploy the Azure storage account first:
 
 That deployment includes the Azure storage account and the required Azure storage tables
+
 * cabackup
 * catranslation
 * cabackupconfiguration
@@ -14,7 +15,7 @@ That deployment includes the Azure storage account and the required Azure storag
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FStorageAccount%2Fdeploystorageaccount.json)
 
 > #### Deployment input:
-> <b style='color:red'>!IMPORTANT!</b> please select an existing resourcegroup or define a new one!
+> <b style='color:red'>!IMPORTANT!</b> please select an existing resource-group or define a new one!
 
 ![Deplyoment](./StorageAccount/images/storagedeployment.png)
 
@@ -24,15 +25,15 @@ That deployment includes the Azure storage account and the required Azure storag
 
 <hr/>
 
-#### 2. Next step is the user assigned managed identity deployment
+#### 2. Next, the user assigned managed identity deployment
 
 That deployment step includes the Azure user assigned managed identits deployment, which is important for the whole solution.
-Keep in mind, we have to copy the user assigned managed identity 'client id' when the deployment is finished!
+Keep in mind, we have to copy the user assigned managed identity 'client id' when the deployment is finished! That information is required for the next steps.
 
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FAzureMI%2Fdeploymanagedidentity.json)
 
 > #### Deployment input:
-> <b style='color:red'>!IMPORTANT!</b> please select the resource group created bevor
+> <b style='color:red'>!IMPORTANT!</b> please select the resource group created before.
 
 ![Deplyoment](./AzureMI/images/deploymanagedidentity.png)
 
@@ -41,23 +42,25 @@ Keep in mind, we have to copy the user assigned managed identity 'client id' whe
 ![Deplyoment](./AzureMI/images/finisheddeployment.png)
 
 > #### <b style='color:orange'>Now an important part!</b>
-> <b>First,</b> please copy the output from the deployment, we need that information in the next steps!
+> <b>First,</b> please copy the output from the deployment, we need that information for the next steps!
 
 ![Deplyoment](./AzureMI/images/getmiidstep1.png)
 
 
 ![Deplyoment](./AzureMI/images/getmiidstep2.png)
 
-> <b>Secound,</b> we have to assign the right permissions (least priviledge) to the Azure user assigned managed identity.
+> <b>Secondly,</b> we have to assign the right permissions (least priviledge) to the Azure user assigned managed identity.
+
+Here thepermission list for user assigned the managed identity
+
+* User.Read.All > required for policy changes
+* Policy.Read.All > required for the daily backup process
+* Policy.ReadWrite.ConditionalAccess > required for the polica restore process
 
 To do this, please open a powershell session on you PC (Az tools are reqired) or (in my case) 
-open the Azure cloudshell (I love that feature and also recorded a <a href="https://www.youtube.com/watch?v=WrMJ0wPnEuw" target="_blank">YouTube video</a> about the configuration)
+open the Azure cloudshell (I love this feature and also have recorded a <a href="https://www.youtube.com/watch?v=WrMJ0wPnEuw" target="_blank">YouTube video</a> about the configuration and the usability)
 
 Okay I'm opening my Azure cloudshell and execute the following commands:
-
-User.Read.All > für Change Policy!
-Policy.Read.All > für das Daily backup!
-Policy.ReadWrite.ConditionalAccess > für den restore!
 
 ```powershell
 $permissions = @('User.Read.All','Policy.Read.All', 'Policy.ReadWrite.ConditionalAccess')
@@ -82,7 +85,7 @@ New-AzureAdServiceAppRoleAssignment -ObjectId $MSI.ObjectId -PrincipalId $MSI.Ob
 
 <hr/>
 
-#### 3. Now we can deploy the keyvault resource
+#### 3. Now we can deploy the Azure keyvault resource
 
 That deployment step includes the Azure keyvault deployment, which is important for the Web Application.
 
@@ -90,31 +93,36 @@ That deployment step includes the Azure keyvault deployment, which is important 
 
 > #### Deployment input:
 > <b style='color:red'>!IMPORTANT!</b> <br/> 
-> * Please select the resource group created bevor
+> * Please select the resource group created before
 > * Add the object id from the user assigned managed identity
 > * Add the Azure storage account connection string
 
 ![Deplyoment](./KeyVault/images/keyvaultdeployment.png)
 
-> You can find the Storageconnection string, when you open the deployed storage account and select the following:
+> You can find the storage connection string, when you opening the deployed storage account and select the following:
 
-![Deplyoment](./KeyVault/images/selectstroageaccountconstring.png)
+![StorageAccount](./KeyVault/images/selectstroageaccountconstring.png)
 
 > #### Result:
 
-![Deplyoment](./KeyVault/images/finisheddeployment.png)
+![StorageAccountKey](./KeyVault/images/finisheddeployment.png)
 
 <hr/>
 
 #### 4. Now we can deploy the Azure logic apps including the connectors
 
-That deployment step includes the Azure logicapp and connectors deployment, which represent the basic infrastructure.
+That deployment step includes the Azure 
+
+* LogicApp 
+* LogicApp connectors 
+
+deployment, which represent the core solution.
 
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FLogicApp%2Fdeploylogicapps.json)
 
 > #### Deployment input:
 > <b style='color:red'>!IMPORTANT!</b> <br/> 
-> * Please select the resource group created bevor
+> * Please select the resource-group created before
 
 ![Deplyoment](./LogicApp/images/logicappdeployment.png)
 
@@ -125,38 +133,38 @@ That deployment step includes the Azure logicapp and connectors deployment, whic
 > #### <b style='color:orange'>Now an important part!</b>
 > Please enable the user assigned managed identity for all logic apps!
 
-> <b>First step:</b> Enable the user assigned managed identity
+> <b>First:</b> Enable the user assigned managed identity
 
-First go to the LogicApp 'CA-Backup' and select on the left side the 'Identity' section and then the 'User assigned' option:
+Go to the LogicApp 'CA-Backup' and select on the left side the 'Identity' section. Then select the 'User assigned' option:
 
 ![Result](./LogicApp/images/enablemistep1.png)
 
-Then 'add' the user defined managed identity 'CA-Backup'.
+Add the user defined managed identity 'CA-Backup'.
 
 ![Result](./LogicApp/images/enablemistep2.png)
 
 > #### <b style='color:orange'>Important!</b>
-> Please repeat the steps from above also on the LogicApp 'CA-Monitor-Changes' and 'CA-Restore'
+> Please repeat those steps from above, on the LogicApp 'CA-Monitor-Changes' and the 'CA-Restore' too.
 
-> <b>Secound step:</b> Activate the two logicapp connectors. 
+> <b>Secound:</b> Activate the LogicApp connectors. 
 
-####To do this, select the connector <b>'azuretables'</b> first. 
-On the top you'll see, that there is an issue with that connector, we will fix it now:
+#### To do this, select the connector <b>'azuretables'</b> first. 
+On the top ofthe screen, you'll see, that there is an issue with that connector, we will fix that issue now:
 
 ![Result](./LogicApp/images/azuretablesconnectorissue.png)
 <br/>
 
-When you've opened the selector, you can find on the left side the option 'Edit API connection':
+When you've opened the connector, you can find on the left side the option 'Edit API connection':
 
 ![Result](./LogicApp/images/activateazuretablesconnector.png)
 
 <br/>
-In the center screen you can see the two options 
+At the center screen, you can see the two options 
 
 * Storage Account Name
 * Shared Storage Key
 
-To fill out, please switch onece more to the storage account and copy the two configuration settings:
+To fill out, please switch once more to the storage account, and copy the two configuration settings:
 
 * Storage account name
 * Key1
@@ -166,13 +174,17 @@ To fill out, please switch onece more to the storage account and copy the two co
 add the information to the connector and click on save.
 
 #### Now we can go one step future and enable the <b>'office365'</b> connector.
-It's the same process, please select the connector and then go to the option 'Edit API connection':
+It's the same process, please select the connector, and go to the option 'Edit API connection':
 
 ![Result](./LogicApp/images/activateoffice365connector.png)
 
 Click on 'Authorize' and login into your Office365 account.
 > #### <b style='color:orange'>Important!</b>
-> Please use an office365 enabled user to authentication including an exchange online mailbox!
+> Please use an Office 365 enabled user, including an exchange online mailbox, for the authentication!
+
+<hr/>
+
+
 
 
 
