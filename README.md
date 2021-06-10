@@ -174,6 +174,20 @@ Click on 'Authorize' and login into your Office365 account.
 > #### <b style='color:orange'>Important!</b>
 > Please use an office365 enabled user to authentication including an exchange online mailbox!
 
+<hr/>
+
+#### 5. Now we can deploy the Azure log analytics workspace 
+
+That deployment step includes the following services and configurations:
+
+* Azure log analytics workspace deployment
+* Azure active directory connection
+* Alerting rule for conditional access policy changes including the required Action Group.
+
+> #### <b style='color:orange'>Important!</b>
+> Befor we can start with the deployment, we have to copy the HTTP URL from the 'CA-Monitor-Changes' LogicApp
 
 
+
+[![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FLogAnalytics%2Fdeployloganalytics.json)
 

@@ -1,0 +1,82 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "LogicApp_ChangesURL": {
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "microsoft.operationalinsights/workspaces",
+            "apiVersion": "2020-10-01",
+            "name": "cabackup",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                },
+                "retentionInDays": 30
+            }
+        },        
+
+        {
+            "type": "microsoft.insights/scheduledqueryrules",
+            "apiVersion": "2021-02-01-preview",
+            "name": "CABackup-Changes",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "displayName": "CABackup-Changes",
+                "severity": 3,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "scopes": [
+                    "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.OperationalInsights/workspaces/cabackup')]"
+                ],
+                "windowSize": "PT5M",
+                "criteria": {
+                    "allOf": [
+                        {
+                            "query": "AuditLogs\n| where OperationName == \"Update conditional access policy\"\n| extend userid_ = tostring(parse_json(tostring(InitiatedBy.user)).id)\n| where userid_ <> \"\"",
+                            "timeAggregation": "Count",
+                            "operator": "GreaterThan",
+                            "threshold": 0,
+                            "failingPeriods": {
+                                "numberOfEvaluationPeriods": 1,
+                                "minFailingPeriodsToAlert": 1
+                            }
+                        }
+                    ]
+                },
+                "actions": [
+                    {
+                        "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', 'CABackup')]"
+                    }
+                ]
+            }
+        },     
+
+        {
+            "type": "microsoft.insights/actionGroups",
+            "apiVersion": "2019-06-01",
+            "name": "CABackup",
+            "location": "Global",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/scheduledqueryrules', 'CABackup-Changes')]"
+            ],
+            "properties": {
+                "groupShortName": "CABackup",
+                "enabled": true,                
+                "logicAppReceivers": [
+                    {
+                        "name": "CA-Changes",
+                        "resourceId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Logic/workflows/CA-Monitor-Changes')]",
+                        "callbackUrl": "[parameters('LogicApp_ChangesURL')]",
+                        "useCommonAlertSchema": true
+                    }
+                ]
+            }
+        }
+    ]
+}
