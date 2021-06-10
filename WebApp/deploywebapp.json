@@ -2,7 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-            
+        "KeyVaultName": {
+            "type": "string"
+        },
+        "LogicAppRestoreURL": {
+            "type": "string"
+        }  
     },
     "variables": {
       
@@ -50,9 +55,19 @@
                 "serverFarmId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/serverfarms/cabackupappsvcplan')]",
                 "siteConfig": {
                     "numberOfWorkers": 1,
-                    "alwaysOn": true
+                    "alwaysOn": true,
+                    "appSettings": [
+                        {
+                            "name":"KeyVault",
+                            "value":"[parameters('KeyVaultName')]"
+                        },
+                        {
+                            "name":"LACARestore",
+                            "value": "[parameters('LogicAppRestoreURL')]"
+                        }
+                    ]
                 }
-            },
+            },    
             "resources": [
             {
               "type": "sourcecontrols",

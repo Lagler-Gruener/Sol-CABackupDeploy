@@ -233,6 +233,7 @@ That deployment step includes the following services and configurations:
 
 ![EnableAADDiagnosticSetting1](./LogAnalytics/images/enableaaddiagnosticsettings2.png)
 
+<hr/>
 
 #### 6. The last step is the Azure webapp deployment 
 
