@@ -270,3 +270,50 @@ That deployment step includes the following services and configurations:
 > * Please past the logicapp URL to the 'Logic App_Restore_URL' field
 
 ![Deplyoment](./WebApp/images/deploywebapp.png)
+
+> #### Result:
+
+![Result](./WebApp/images/resultdeploywebapp.png)
+
+> <b style='color:red'>!IMPORTANT!</b> <br/> 
+> Keep in mind, I've defined a unique string for the webapp because it's an azure requironment.
+
+> Now our last steps, after some minutes, you can see in the deployment center of the web app, that the GitHub repo deployment also succeeded:
+
+![Result](./WebApp/images/resultgithubdeployment.png)
+
+<b>Awesome, the sourcecode for the webapp is now finished deployed we can start with the last two steps</b>
+
+> <b>First:</b> assign the managed identity from the webapp to the keyvault.
+> * Please open the azure keyvault and select the 'Access policy' option
+> * Then click on 'Add Access Policy' and select the webapp managed identity starting with 'CA-Backup-Portal' 
+> * And at the end select the 'Get' and 'List' Secret permission and click on 'Add'
+> * <b>IMPORTANT!</b> now click on 'Save'!!
+
+![Result](./WebApp/images/assignmanagedidentitytokv.png)
+
+![Result](./WebApp/images/assignmanagedidentitytokv2.png)
+
+![Result](./WebApp/images/assignmanagedidentitytokv3.png)
+
+![Result](./WebApp/images/assignmanagedidentitytokv4.png)
+
+
+> <b>Second:</b> enable the Azure AD authentication for the webapp.
+> * Please open the webapp and go to the section ' Authentication'
+> * Select the option 'Add identity provider' and select 'Microsoft' and click on 'Add'
+
+![Result](./WebApp/images/enablewebappauthentication.png)
+
+![Result](./WebApp/images/enablewebappauthentication2.png)
+
+<hr/>
+
+<b>That's it, we have now the CAaaS application configured finished, you have now the ability to open the web application, authenticate with an Azure ad user and restore backups.</b>
+
+![Result](./images/mainscreen.png)
+
+![Result](./images/backupscreen.png)
+
+![Result](./images/settingsscreen.png)
+
