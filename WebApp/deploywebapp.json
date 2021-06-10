@@ -1,0 +1,71 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+            
+    },
+    "variables": {
+      
+    },
+    "resources": 
+    [   
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2020-06-01",
+            "name": "cabackupappsvcplan",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S",
+                "capacity": 1
+            },
+            "kind": "app",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "CA-Backup-Portal",
+            "location": "[resourceGroup().location]",
+            "kind": "app",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', 'cabackupappsvcplan')]"
+            ],
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/serverfarms/cabackupappsvcplan')]",
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "alwaysOn": true
+                }
+            },
+            "resources": [
+            {
+              "type": "sourcecontrols",
+              "apiVersion": "2020-06-01",
+              "name": "web",
+              "location": "[resourceGroup().location]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', 'CA-Backup-Portal')]"
+              ],
+              "properties": {
+                "repoUrl": "https://github.com/Lagler-Gruener/Sol-CABackupDeploy",
+                "branch": "main",
+                "isManualIntegration": true
+              }
+            }
+          ]
+        }
+    ]
+  }

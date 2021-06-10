@@ -195,7 +195,8 @@ That deployment step includes the following services and configurations:
 
 > #### <b style='color:orange'>Important!</b>
 > Befor we can start with the deployment, we have to copy the HTTP URL from the 'CA-Monitor-Changes' LogicApp.
-> Please select the LogicApp 'CA-Monitor-Changes' and switch to the 'Logic app designer'
+> 
+> <b>First,</b> please select the LogicApp 'CA-Monitor-Changes' and switch to the 'Logic app designer'
 
 ![GettheHTTPURL](./LogAnalytics/images/getlogicapphttpurl.png)
 
@@ -210,5 +211,37 @@ That deployment step includes the following services and configurations:
 > #### Deployment input:
 > <b style='color:red'>!IMPORTANT!</b> <br/> 
 > * Please select the resource-group created before
+> * Please past the URL to the 'Logic App_Changes_URL field
 
-![Deplyoment](./LogicApp/images/logicappdeployment.png)
+![Deplyoment](./LogAnalytics/images/deployloganalytics.png)
+
+> #### Result:
+
+![Result](./LogAnalytics/images/resultdeployloganalytics.png)
+
+> <b>Second:</b> the last step is the diagnostic setting enablement in Azure ad
+> * Please open the Azure active directory service and switch to the diagnostic settings
+> * Select 'Add diagnostic setting' to configure the events
+
+![EnableAADDiagnosticSetting](./LogAnalytics/images/enableaaddiagnosticsettings.png)
+
+> * Define a 'Diagnostic setting name' (for example CA-Backup)
+> * Select 'AuditLogs'
+> * Select the right Azure rescource group
+> * Select the created Log Analytics Workspace 'cabackup'
+> * Click on 'Save'
+
+![EnableAADDiagnosticSetting1](./LogAnalytics/images/enableaaddiagnosticsettings2.png)
+
+
+#### 6. The last step is the Azure webapp deployment 
+
+That deployment step includes the following services and configurations:
+
+* Azure app service plan deployment (S1, cheapest productive plan)
+* Azure webapp deployment (.Net 4.8)
+* Configure the webapp configuration settings
+* Deploy the webapp from my GitHub repo
+
+
+
