@@ -185,9 +185,6 @@ Click on 'Authorize' and login into your Office365 account.
 <hr/>
 
 
-
-<hr/>
-
 #### 5. Now we can deploy the Azure log analytics workspace 
 
 That deployment step includes the following services and configurations:
@@ -197,9 +194,21 @@ That deployment step includes the following services and configurations:
 * Alerting rule for conditional access policy changes including the required Action Group.
 
 > #### <b style='color:orange'>Important!</b>
-> Befor we can start with the deployment, we have to copy the HTTP URL from the 'CA-Monitor-Changes' LogicApp
+> Befor we can start with the deployment, we have to copy the HTTP URL from the 'CA-Monitor-Changes' LogicApp.
+> Please select the LogicApp 'CA-Monitor-Changes' and switch to the 'Logic app designer'
 
+![GettheHTTPURL](./LogAnalytics/images/getlogicapphttpurl.png)
 
+> Then select the trigger 'When a HTTP request is received' and copy the URL.
+
+![GettheHTTPURL](./LogAnalytics/images/getlogicapphttpurl2.png)
+
+> Now we can start with the deployment
 
 [![Deploy Azure storage account](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FLogAnalytics%2Fdeployloganalytics.json)
 
+> #### Deployment input:
+> <b style='color:red'>!IMPORTANT!</b> <br/> 
+> * Please select the resource-group created before
+
+![Deplyoment](./LogicApp/images/logicappdeployment.png)
