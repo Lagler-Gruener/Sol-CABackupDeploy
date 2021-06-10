@@ -244,5 +244,28 @@ That deployment step includes the following services and configurations:
 * Configure the webapp configuration settings
 * Deploy the webapp from my GitHub repo
 
+> <b style='color:red'>!IMPORTANT!</b> <br/> 
+> Befor we start the deployment, we need two informations:
+> * The KeyVault URL
+> * The restore logicapp URL
+
+> <b>First:</b> to find the keyvault URL open the keyvault and copy the Vault URI
+
+![CopyKeyVaultURI](./WebApp/images/copykeyvaulturi.png)
+
+> <b>Second:</b> to find the restore logicapp URL, open the logicapp 'CA-Restore', got to the 'Logic app designer', select the trigger 'When a HTTP request is received'and copy the URL.
+
+![CopyLogicAppURL](./WebApp/images/copylogicappurl.png)
+
+![CopyLogicAppURL](./WebApp/images/copylogicappurl2.png)
+
+> Okay great, now we can start with the deployment.
+
 [![Deploy WebApp](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FWebApp%2Fdeploywebapp.json)
 
+> #### Deployment input:
+> <b style='color:red'>!IMPORTANT!</b> <br/> 
+> * Please select the resource-group created before
+> * Please past the URL to the 'Logic App_Changes_URL field
+
+![Deplyoment](./LogAnalytics/images/deployloganalytics.png)
