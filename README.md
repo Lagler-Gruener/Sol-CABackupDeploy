@@ -266,6 +266,7 @@ That deployment step includes the following services and configurations:
 > #### Deployment input:
 > <b style='color:red'>!IMPORTANT!</b> <br/> 
 > * Please select the resource-group created before
-> * Please past the URL to the 'Logic App_Changes_URL field
+> * Please past the keyvault URL to the 'Key Vault Name' field
+> * Please past the logicapp URL to the 'Logic App_Restore_URL' field
 
-![Deplyoment](./LogAnalytics/images/deployloganalytics.png)
+![Deplyoment](./WebApp/images/deploywebapp.png)

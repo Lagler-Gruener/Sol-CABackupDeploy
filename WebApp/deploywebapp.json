@@ -75,7 +75,7 @@
               "name": "web",
               "location": "[resourceGroup().location]",
               "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', 'CA-Backup-Portal')]"
+                "[resourceId('Microsoft.Web/sites', concat('CA-Backup-Portal', uniqueString(resourceGroup().id)))]"
               ],
               "properties": {
                 "repoUrl": "https://github.com/Lagler-Gruener/Sol-CABackupDeploy",
