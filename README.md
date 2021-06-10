@@ -243,5 +243,5 @@ That deployment step includes the following services and configurations:
 * Configure the webapp configuration settings
 * Deploy the webapp from my GitHub repo
 
-
+[![Deploy WebApp](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FLagler-Gruener%2FSol-CABackupDeploy%2Fmain%2FLogAnalytics%2Fdeployloganalytics.json)
 

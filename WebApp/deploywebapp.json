@@ -36,12 +36,15 @@
         {
             "type": "Microsoft.Web/sites",
             "apiVersion": "2018-11-01",
-            "name": "CA-Backup-Portal",
+            "name": "[concat('CA-Backup-Portal', uniqueString(resourceGroup().id))]",
             "location": "[resourceGroup().location]",
             "kind": "app",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', 'cabackupappsvcplan')]"
             ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "properties": {
                 "enabled": true,
                 "serverFarmId": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Web/serverfarms/cabackupappsvcplan')]",
