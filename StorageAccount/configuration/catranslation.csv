@@ -1,0 +1,10 @@
+PartitionKey,RowKey,Timestamp,Function,Function@type,Section,Section@type,Setting,Setting@type,Translation,Translation@type
+cloudAppSecurity:cloudAppSecurityType,1,2021-06-08T08:23:24.578Z,cloudAppSecurity,Edm.String,sessionControls,Edm.String,cloudAppSecurityType,Edm.String,mcasConfigured,Edm.String
+cloudAppSecurity:cloudAppSecurityType,2,2021-06-08T08:23:35.375Z,cloudAppSecurity,Edm.String,sessionControls,Edm.String,cloudAppSecurityType,Edm.String,monitorOnly,Edm.String
+cloudAppSecurity:cloudAppSecurityType,3,2021-06-08T08:23:42.286Z,cloudAppSecurity,Edm.String,sessionControls,Edm.String,cloudAppSecurityType,Edm.String,blockDownloads,Edm.String
+persistentBrowser:mode,1,2021-06-08T08:23:58.643Z,persistentBrowser,Edm.String,sessionControls,Edm.String,mode,Edm.String,always,Edm.String
+persistentBrowser:mode,2,2021-06-08T08:24:05.649Z,persistentBrowser,Edm.String,sessionControls,Edm.String,mode,Edm.String,never,Edm.String
+signInFrequency:authenticationType,0,2021-06-08T09:09:56.445Z,signInFrequency,Edm.String,sessionControls,Edm.String,authenticationType,Edm.String,-removekey-,Edm.String
+signInFrequency:frequencyInterval,0,2021-06-08T09:10:41.271Z,signInFrequency,Edm.String,sessionControls,Edm.String,frequencyInterval,Edm.String,-removekey-,Edm.String
+signInFrequency:type,1,2021-06-08T08:24:19.608Z,signInFrequency,Edm.String,sessionControls,Edm.String,type,Edm.String,days,Edm.String
+signInFrequency:type,2,2021-06-08T08:24:26.153Z,signInFrequency,Edm.String,sessionControls,Edm.String,type,Edm.String,hours,Edm.String

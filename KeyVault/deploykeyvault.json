@@ -2,10 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "keyvault_name": {
-            "defaultValue": "CAPolicyBackupKV",
-            "type": "String"
-        },
         "objectid": {
             "type": "String",
             "metadata": {
@@ -21,7 +17,7 @@
         {
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2021-04-01-preview",
-            "name": "[parameters('keyvault_name')]",
+            "name": "[concat('CAPolicyBackupKV', uniqueString(resourceGroup().id))]",
             "location": "[resourcegroup().location]",
             "properties": {
                 "sku": {
@@ -48,10 +44,10 @@
         {
             "type": "Microsoft.KeyVault/vaults/secrets",
             "apiVersion": "2021-04-01-preview",
-            "name": "[concat(parameters('keyvault_name'), '/StrAccConnectionString')]",
+            "name": "[concat('CAPolicyBackupKV', uniqueString(resourceGroup().id), '/StrAccConnectionString')]",
             "location": "westeurope",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvault_name'))]"
+                "[resourceId('Microsoft.KeyVault/vaults', concat('CAPolicyBackupKV', uniqueString(resourceGroup().id)))]"
             ],
             "properties": {
                 "value": "[parameters('storageconnectionstring')]",

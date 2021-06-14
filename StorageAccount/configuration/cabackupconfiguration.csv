@@ -1,0 +1,2 @@
+PartitionKey,RowKey,Timestamp,email,email@type,state,state@type
+config,overridepolicyvalidate,2021-06-09T08:12:26.010Z,laglerh@lagler-gruener.at,Edm.String,true,Edm.Boolean
