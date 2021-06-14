@@ -161,7 +161,7 @@
                                                             "body": {
                                                                 "Message": {
                                                                     "Body": "there is a new azure conditional access restore request available.<br/>\nThe customer '@{triggerBody()?['requestor']}' wants to restore (overwrite) the <br/>\nconditional access policy '@{body('Parse_the_conditional_access_policy_marked_for_restore')?['displayName']}'. <br/>\n<p></p>\nHere is the data, which will be restored.<br/>\nPlease confirm or reject the request\n<hr/>\n@{outputs('Remove_modifiedDateTime_property_from_pasted_JSON_file')}\n<hr/>\nRegards,<br/>\nAzure conditional access backup service\n\n\n\n\n\n\n",
-                                                                    "HeaderText": "Dear ladies and gentleman.",
+                                                                    "HeaderText": "Dear ladies and gentlemen.",
                                                                     "HideHTMLMessage": false,
                                                                     "Importance": "High",
                                                                     "Options": "Approve, Reject",

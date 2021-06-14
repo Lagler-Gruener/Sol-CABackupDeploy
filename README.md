@@ -325,3 +325,5 @@ That deployment step includes the following services and configurations:
 
 ![Result](./images/settingsscreen.png)
 
+![Result](./images/validationmail.png)
+
