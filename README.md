@@ -307,6 +307,14 @@ That deployment step includes the following services and configurations:
 
 ![Result](./WebApp/images/enablewebappauthentication2.png)
 
+> <b>Third:</b> please import the inital configurations.
+> * Open the website
+> * Switch to the settings tab and click on Import
+
+![OpenWebsite](./images/mainscreen.png)
+
+![ImportSettings](./images/importsettings.png)
+
 <hr/>
 
 <b>That's it, we have now the CAaaS application configured finished, you have now the ability to open the web application, authenticate with an Azure ad user and restore backups.</b>
