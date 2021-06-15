@@ -54,6 +54,7 @@ Keep in mind, we have to copy the user assigned managed identity 'client id' whe
 Here thepermission list for user assigned the managed identity
 
 * User.Read.All > required for policy changes
+* Application.Read.All > required for policy restore
 * Policy.Read.All > required for the daily backup process
 * Policy.ReadWrite.ConditionalAccess > required for the policy restore process
 
@@ -63,7 +64,7 @@ open the Azure cloudshell (I love this feature and also have recorded a <a href=
 Okay I'm opening my Azure cloudshell and execute the following commands:
 
 ```powershell
-$permissions = @('User.Read.All','Policy.Read.All', 'Policy.ReadWrite.ConditionalAccess')
+$permissions = @('User.Read.All','Policy.Read.All', 'Policy.ReadWrite.ConditionalAccess', 'Application.Read.All')
 
 $GraphAppId = "00000003-0000-0000-c000-000000000000"
 $GraphAppName = "CA-Backup"
