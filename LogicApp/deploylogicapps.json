@@ -478,21 +478,13 @@
                                                 "content": "@body('HTTP_get_modified_by')",
                                                 "schema": {
                                                     "properties": {
-                                                        "@@odata.context": {
-                                                            "type": "string"
-                                                        },
-                                                        "businessPhones": {
-                                                            "type": "array"
-                                                        },
+                                                        "@@odata.context": {},
+                                                        "businessPhones": {},
                                                         "displayName": {},
                                                         "givenName": {},
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
+                                                        "id": {},
                                                         "jobTitle": {},
-                                                        "mail": {
-                                                            "type": "string"
-                                                        },
+                                                        "mail": {},
                                                         "mobilePhone": {},
                                                         "officeLocation": {},
                                                         "preferredLanguage": {},

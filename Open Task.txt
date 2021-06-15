@@ -1,2 +1,0 @@
-
-Add the restore functionality of the translation and configuration table!!!!

@@ -55,7 +55,7 @@ Here thepermission list for user assigned the managed identity
 
 * User.Read.All > required for policy changes
 * Policy.Read.All > required for the daily backup process
-* Policy.ReadWrite.ConditionalAccess > required for the polica restore process
+* Policy.ReadWrite.ConditionalAccess > required for the policy restore process
 
 To do this, please open a powershell session on you PC (Az tools are reqired) or (in my case) 
 open the Azure cloudshell (I love this feature and also have recorded a <a href="https://www.youtube.com/watch?v=WrMJ0wPnEuw" target="_blank">YouTube video</a> about the configuration and the usability)
