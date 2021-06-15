@@ -17,7 +17,7 @@
         {
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2021-04-01-preview",
-            "name": "[concat('CAPolicyBackupKV', uniqueString(resourceGroup().id))]",
+            "name": "[concat('CAPolicyBackupKV', substring(uniqueString(resourceGroup().id),0,4))]",
             "location": "[resourcegroup().location]",
             "properties": {
                 "sku": {
@@ -44,10 +44,10 @@
         {
             "type": "Microsoft.KeyVault/vaults/secrets",
             "apiVersion": "2021-04-01-preview",
-            "name": "[concat('CAPolicyBackupKV', uniqueString(resourceGroup().id), '/StrAccConnectionString')]",
+            "name": "[concat('CAPolicyBackupKV', substring(uniqueString(resourceGroup().id),0,4), '/StrAccConnectionString')]",
             "location": "westeurope",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', concat('CAPolicyBackupKV', uniqueString(resourceGroup().id)))]"
+                "[resourceId('Microsoft.KeyVault/vaults', concat('CAPolicyBackupKV', substring(uniqueString(resourceGroup().id),0,4)))]"
             ],
             "properties": {
                 "value": "[parameters('storageconnectionstring')]",
